@@ -177,11 +177,13 @@ def fetch_history(ib, ticker, bar_code, start_date, end_date, use_rth, what_to_s
         print(f"{len(bars):>5} bars  (oldest: {oldest})")
         all_bars.extend(bars)
 
-        # Walk cursor back to before this chunk's oldest bar
+        # Walk cursor back to before this chunk's oldest bar.
+        # ib_insync returns tz-aware datetimes for intraday bars; strip the tz so
+        # comparisons with naive start_date/end_date don't blow up.
         if isinstance(oldest, datetime):
-            cursor = oldest
+            cursor = oldest.replace(tzinfo=None) if oldest.tzinfo else oldest
         else:
-            # date-only; treat as start of that day
+            # date-only object (1d / 1w / 1M bars)
             cursor = datetime.combine(oldest, datetime.min.time())
 
         # Stop if we've gone past start_date
